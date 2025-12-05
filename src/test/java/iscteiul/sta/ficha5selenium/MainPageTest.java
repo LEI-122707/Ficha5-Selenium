@@ -3,7 +3,7 @@ package iscteiul.sta.ficha5selenium;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.By; // <-- Adicionar este import
+import org.openqa.selenium.By; // <-- Novo import necessário
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.TimeoutException;
@@ -27,6 +27,8 @@ public class MainPageTest {
     public void setUp() {
         driver = new ChromeDriver();
         driver.manage().window().maximize();
+        // Adicionamos Implicit Wait para ajudar a PageFactory a encontrar elementos não dinâmicos
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(3));
         driver.get("https://www.jetbrains.com/");
 
         wait = new WebDriverWait(driver, Duration.ofSeconds(10));
@@ -35,7 +37,7 @@ public class MainPageTest {
         try {
             wait.until(ExpectedConditions.elementToBeClickable(mainPage.acceptCookiesButton)).click();
         } catch (TimeoutException e) {
-            System.out.println("Aviso: Botão de cookies não apareceu ou já foi aceite. Prosseguindo.");
+            System.out.println("Aviso: Botão de cookies não apareceu. Prosseguindo.");
         }
     }
 
@@ -51,15 +53,14 @@ public class MainPageTest {
         // 1. Clicar na lupa
         wait.until(ExpectedConditions.elementToBeClickable(mainPage.searchButton)).click();
 
-        // 2. 🚨 CORREÇÃO CRÍTICA: Em vez de usar mainPage.searchInput, usamos By.cssSelector
-        // diretamente aqui para localizar o input[type='search'] dinamicamente.
+        // 2. 🚨 CORREÇÃO: Usamos visibilityOfElementLocated para garantir que o input é encontrado no DOM
         WebElement input = wait.until(
-                ExpectedConditions.visibilityOfElementLocated(By.cssSelector("input[type='search']"))
+                ExpectedConditions.visibilityOfElementLocated(By.cssSelector("[data-test='search-input']"))
         );
         input.sendKeys("Selenium");
         input.sendKeys(Keys.ENTER);
 
-        // 3. Validação: Espera que o título mude
+        // 3. Validação: Espera que o título da nova página contenha o termo
         wait.until(ExpectedConditions.titleContains("Selenium"));
         assertTrue(driver.getTitle().contains("Selenium") || driver.getCurrentUrl().contains("q=Selenium"),
                 "A pesquisa por 'Selenium' falhou.");
@@ -67,25 +68,30 @@ public class MainPageTest {
 
     @Test
     public void toolsMenu() {
-        // Teste 2: Abertura do Menu
-
         // 1. Clicar no menu "Developer Tools"
         wait.until(ExpectedConditions.elementToBeClickable(mainPage.developerToolsMenu)).click();
 
-        // 2. Validação: Agora esperamos pela visibilidade do novo seletor (XPath)
-        WebElement subLink = wait.until(ExpectedConditions.visibilityOf(mainPage.seeAllToolsButton));
+        // 2. 🚨 CORREÇÃO: Usamos visibilityOfElementLocated e o novo XPath para o link
+        WebElement subLink = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("//a[normalize-space(text())='All products' and contains(@href, '/all-products/')]")
+                )
+        );
         assertTrue(subLink.isDisplayed(), "O submenu de Developer Tools deveria estar visível.");
     }
 
     @Test
     public void navigationToAllTools() {
-        // Teste 3: Navegação para a página de todos os produtos
-
         // 1. Abrir o menu Developer Tools
         wait.until(ExpectedConditions.elementToBeClickable(mainPage.developerToolsMenu)).click();
 
-        // 2. Clicar em "All products" (com o novo seletor, deve funcionar)
-        wait.until(ExpectedConditions.elementToBeClickable(mainPage.seeAllToolsButton)).click();
+        // 2. 🚨 CORREÇÃO: Usamos elementToBeClickable e o novo XPath para o link
+        WebElement allProductsLink = wait.until(
+                ExpectedConditions.elementToBeClickable(
+                        By.xpath("//a[normalize-space(text())='All products' and contains(@href, '/all-products/')]")
+                )
+        );
+        allProductsLink.click();
 
         // 3. Validação: Espera e verifica o título da nova página
         wait.until(ExpectedConditions.titleContains("All Developer Tools"));
