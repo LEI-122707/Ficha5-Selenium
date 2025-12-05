@@ -1,56 +1,94 @@
 package iscteiul.sta.ficha5selenium;
-import org.junit.jupiter.api.*;
-import static org.junit.jupiter.api.Assertions.*;
-import org.openqa.selenium.By;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.openqa.selenium.By; // <-- Adicionar este import
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
 import java.time.Duration;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class MainPageTest {
+
     private WebDriver driver;
     private MainPage mainPage;
+    private WebDriverWait wait;
 
-@BeforeEach    public void setUp() {
+    @BeforeEach
+    public void setUp() {
         driver = new ChromeDriver();
         driver.manage().window().maximize();
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
         driver.get("https://www.jetbrains.com/");
 
+        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         mainPage = new MainPage(driver);
+
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(mainPage.acceptCookiesButton)).click();
+        } catch (TimeoutException e) {
+            System.out.println("Aviso: Botão de cookies não apareceu ou já foi aceite. Prosseguindo.");
+        }
     }
 
-@AfterEach    public void tearDown() {
-        driver.quit();
+    @AfterEach
+    public void tearDown() {
+        if (driver != null) {
+            driver.quit();
+        }
     }
 
     @Test
     public void search() {
-        mainPage.searchButton.click();
+        // 1. Clicar na lupa
+        wait.until(ExpectedConditions.elementToBeClickable(mainPage.searchButton)).click();
 
-        WebElement searchField = driver.findElement(By.cssSelector("[data-test='search-input']"));
-        searchField.sendKeys("Selenium");
+        // 2. 🚨 CORREÇÃO CRÍTICA: Em vez de usar mainPage.searchInput, usamos By.cssSelector
+        // diretamente aqui para localizar o input[type='search'] dinamicamente.
+        WebElement input = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(By.cssSelector("input[type='search']"))
+        );
+        input.sendKeys("Selenium");
+        input.sendKeys(Keys.ENTER);
 
-        WebElement submitButton = driver.findElement(By.cssSelector("button[data-test='full-search-button']"));
-        submitButton.click();
-
-        WebElement searchPageField = driver.findElement(By.cssSelector("input[data-test='search-input']"));
-assertEquals("Selenium", searchPageField.getAttribute("value"));    }
+        // 3. Validação: Espera que o título mude
+        wait.until(ExpectedConditions.titleContains("Selenium"));
+        assertTrue(driver.getTitle().contains("Selenium") || driver.getCurrentUrl().contains("q=Selenium"),
+                "A pesquisa por 'Selenium' falhou.");
+    }
 
     @Test
     public void toolsMenu() {
-        mainPage.toolsMenu.click();
+        // Teste 2: Abertura do Menu
 
-        WebElement menuPopup = driver.findElement(By.cssSelector("div[data-test='main-submenu']"));
-        assertTrue(menuPopup.isDisplayed());
+        // 1. Clicar no menu "Developer Tools"
+        wait.until(ExpectedConditions.elementToBeClickable(mainPage.developerToolsMenu)).click();
+
+        // 2. Validação: Agora esperamos pela visibilidade do novo seletor (XPath)
+        WebElement subLink = wait.until(ExpectedConditions.visibilityOf(mainPage.seeAllToolsButton));
+        assertTrue(subLink.isDisplayed(), "O submenu de Developer Tools deveria estar visível.");
     }
 
     @Test
     public void navigationToAllTools() {
-        mainPage.seeDeveloperToolsButton.click();
-        mainPage.findYourToolsButton.click();
+        // Teste 3: Navegação para a página de todos os produtos
 
-        WebElement productsList = driver.findElement(By.id("products-page"));
-        assertTrue(productsList.isDisplayed());
-assertEquals("All Developer Tools and Products by JetBrains", driver.getTitle());    }
+        // 1. Abrir o menu Developer Tools
+        wait.until(ExpectedConditions.elementToBeClickable(mainPage.developerToolsMenu)).click();
+
+        // 2. Clicar em "All products" (com o novo seletor, deve funcionar)
+        wait.until(ExpectedConditions.elementToBeClickable(mainPage.seeAllToolsButton)).click();
+
+        // 3. Validação: Espera e verifica o título da nova página
+        wait.until(ExpectedConditions.titleContains("All Developer Tools"));
+        assertEquals("All Developer Tools and Products by JetBrains", driver.getTitle());
+    }
 }
