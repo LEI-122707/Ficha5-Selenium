@@ -4,7 +4,6 @@ import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.logevents.SelenideLogger;
 import io.qameta.allure.selenide.AllureSelenide;
-import org.example.ficha5.MainPage; // Importando a classe original
 import org.junit.jupiter.api.*;
 
 import static com.codeborne.selenide.Condition.*;

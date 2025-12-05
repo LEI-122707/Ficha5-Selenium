@@ -1,4 +1,4 @@
-package org.example.ficha5;
+package iscteiul.sta.ficha5selenium;
 
 import com.codeborne.selenide.SelenideElement;
 import static com.codeborne.selenide.Condition.visible;
