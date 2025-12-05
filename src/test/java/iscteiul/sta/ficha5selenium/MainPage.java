@@ -1,24 +1,49 @@
-package iscteiul.sta.ficha5selenium;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.PageFactory;
+package org.example.ficha5;
 
-// page_url = https://www.jetbrains.com/
+import com.codeborne.selenide.SelenideElement;
+import static com.codeborne.selenide.Condition.visible;
+import static com.codeborne.selenide.Selenide.$;
+
 public class MainPage {
-    @FindBy(xpath = "//*[@data-test-marker='Developer Tools']")
-    public WebElement seeDeveloperToolsButton;
 
-    @FindBy(xpath = "//*[@data-test='suggestion-action']")
-    public WebElement findYourToolsButton;
+    // Elementos agora são privados e usam seletores CSS (mais limpo que XPath)
+    private final SelenideElement developerToolsBtn = $("[data-test-marker='Developer Tools']");
+    private final SelenideElement suggestionLink = $("[data-test='suggestion-link']");
+    private final SelenideElement toolsMenuBtn = $("[aria-label='Developer Tools: Open submenu']");
+    private final SelenideElement searchIcon = $("[data-test='site-header-search-action']");
+    private final SelenideElement searchField = $("[data-test-id='search-input']");
+    private final SelenideElement cookieButton = $("button.ch2-allow-all-btn");
 
-    @FindBy(xpath = "//div[@data-test='main-menu-item' and @data-test-marker = 'Developer Tools']")
-    public WebElement toolsMenu;
+    // Método novo para lidar com cookies aqui dentro
+    public void acceptCookies() {
+        if (cookieButton.isDisplayed()) {
+            cookieButton.click();
+        }
+    }
 
-    @FindBy(css = "[data-test='site-header-search-action']")
-    public WebElement searchButton;
+    public void openDevTools() {
+        developerToolsBtn.click();
+    }
 
-    public MainPage(WebDriver driver) {
-        PageFactory.initElements(driver, this);
+    public void selectFindYourTools() {
+        suggestionLink.click();
+    }
+
+    public void toggleMenu() {
+        toolsMenuBtn.click();
+    }
+
+    public void openSearch() {
+        searchIcon.click();
+    }
+
+    // Método que combina digitar e validar que está visível
+    public void typeInSearch(String text) {
+        searchField.shouldBe(visible).setValue(text);
+    }
+
+    // Getter para validação no teste, mantendo o elemento privado
+    public SelenideElement getSearchInput() {
+        return searchField;
     }
 }
